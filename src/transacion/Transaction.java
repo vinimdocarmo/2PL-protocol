@@ -1,46 +1,55 @@
 package transacion;
 
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.Queue;
+
+import transacion.Operation.OperationItem;
+
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.UUID;
 
 public class Transaction {
-	private String id;
-	private Timestamp timestamp;
-	private ArrayList<Operation> operations;
-	
-	Transaction(ArrayList<Operation> operations) {
-		this.id = UUID.randomUUID().toString();
+	private final Integer id;
+	private final Timestamp timestamp;
+	private final Queue<Operation> operations;
+
+	public Transaction(final LinkedList<Operation> operations) {
+		this.id = TransactionUUID.generateUUID();
 		this.timestamp = new Timestamp(new Date().getTime());
-		this.setOperations(operations);
+		this.operations = operations;
+		
+		for (Operation operation : this.operations) {
+			operation.setTransaction(this);
+		}
 	}
-	
+
 	@Override
 	public String toString() {
-		return "Transaction [id=" + id + ", timestamp=" + timestamp + "]";
+		String transaction = "";
+		
+		for (Operation operation : operations) {
+			OperationItem item = operation.getOperationItem();
+			
+			if (item == null) {
+				transaction += operation.getType() + "_" + this.id.toString();
+			} else {
+				transaction += operation.getType() + "_" + this.id.toString() + "(" + operation.getOperationItem().getName() + ") "; 
+			}
+		}
+		
+		return "T_" + this.id.toString() + " = " + transaction;
 	}
-	
-	public String getId() {
+
+	public int getId() {
 		return id;
 	}
-	public void setId(String id) {
-		this.id = id;
-	}
+
 	public Timestamp getTimestamp() {
 		return timestamp;
 	}
-	public void setTimestamp(Timestamp timestamp) {
-		this.timestamp = timestamp;
-	}
 
-	public ArrayList<Operation> getOperations() {
+	public Queue<Operation> getOperations() {
 		return operations;
 	}
 
-	public void setOperations(ArrayList<Operation> operations) {
-		this.operations = operations;
-	}
-	
-	
 }
