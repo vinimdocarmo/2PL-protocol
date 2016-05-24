@@ -2,3 +2,4 @@ read(x)
 write(x)
 read(y)
 write(y)
+commit
