@@ -1,4 +1,0 @@
-read(x)
-read(w)
-write(w)
-abort

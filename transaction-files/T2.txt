@@ -1,4 +1,4 @@
+read(u)
 read(x)
-read(w)
-write(w)
+write(z)
 commit

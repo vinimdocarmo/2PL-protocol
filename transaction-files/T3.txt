@@ -1,4 +1,4 @@
-read(x)
-read(w)
-write(w)
-abort
+write(u)
+read(v)
+read(p)
+commit

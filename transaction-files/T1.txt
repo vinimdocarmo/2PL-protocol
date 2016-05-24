@@ -1,5 +1,4 @@
-read(x)
-write(x)
 read(y)
-write(y)
+read(p)
+write(x)
 commit

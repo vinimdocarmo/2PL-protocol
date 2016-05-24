@@ -59,9 +59,6 @@ public class LockManager {
 	 */
 	public boolean isOnWaitingList(Transaction transaction) {
 		for (Lock lock : this.locks) {
-			if (lock.waitingTrasactions == null) {
-				System.out.println("Com a fila nula é foda né");
-			}
 			if (lock.waitingTrasactions.contains(transaction)) {
 				return true;
 			}
@@ -72,14 +69,27 @@ public class LockManager {
 	public boolean readLock(final Transaction requestingTransaction, final OperationItem item) {
 		Lock lock = getLockByItem(item);
 		
+		/**
+		 * If the block is unlock or does not exist, create a new one
+		 */
 		if (lock == null || lock.type.equals(LockType.UNLOCK)) {
 			int numberOfReads = 1;
 			Lock newReadLock = new Lock(requestingTransaction, LockType.READ, item, numberOfReads);
 			this.locks.add(newReadLock);
 			
 			return true;
-		} else if (lock.type.equals(LockType.READ)) {
+		} 
+		
+		/**
+		 * If the transaction already has the block for these item, do nothing
+		 */
+		if (!lock.blockingTransactions.contains(requestingTransaction)) {
+			return true;
+		}
+		
+		if (lock.type.equals(LockType.READ)) {
 			lock.numberOfReads++;
+			lock.blockingTransactions.add(requestingTransaction);
 			
 			return true;
 		} else if (lock.type.equals(LockType.WRITE)) {
@@ -94,10 +104,20 @@ public class LockManager {
 	public boolean writeLock(final Transaction requestingTransaction, final OperationItem item) {
 		Lock lock = getLockByItem(item);
 		
+		/**
+		 * If the block is unlock or does not exist, create a new one
+		 */
 		if (lock == null || lock.type.equals(LockType.UNLOCK)) {
 			Lock newWriteLock = new Lock(requestingTransaction, LockType.WRITE, item);
 			this.locks.add(newWriteLock);
 			
+			return true;
+		}
+		
+		/**
+		 * If the transaction already has the block for these item, do nothing
+		 */
+		if (!lock.blockingTransactions.contains(requestingTransaction)) {
 			return true;
 		}
 		
@@ -126,7 +146,7 @@ public class LockManager {
 				return;
 			}
 			
-			this.writeLock(nextTransaction, lock.item);
+			writeLock(nextTransaction, lock.item);
 		} else if (lock.type.equals(LockType.READ)) {
 			lock.numberOfReads--;
 			
