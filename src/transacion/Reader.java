@@ -1,15 +1,16 @@
 package transacion;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+
+import executer.Controller;
 
 public class Reader {
 
@@ -26,16 +27,17 @@ public class Reader {
 	 * @throws IOException
 	 */
 	public static TransactionSet readTransactionFiles() throws IOException {
+		
 		TransactionSet transactions = new TransactionSet();
-
-		Path transactionFilesPath = FileSystems.getDefault().getPath("transaction-files");
-
+		
+		Path transactionFilesPath = new File(Controller.path).toPath();
+		
 		DirectoryStream<Path> dir = Files.newDirectoryStream(transactionFilesPath);
 
 		for (Iterator<Path> iterator = dir.iterator(); iterator.hasNext();) {
 			String transactionFile = iterator.next().getFileName().toString();
 			Path transactionPath = transactionFilesPath.resolve(transactionFile);
-			LinkedList<Operation> operations = new LinkedList<Operation>();
+			ArrayList<Operation> operations = new ArrayList<Operation>();
 			List<String> ops = Files.readAllLines(transactionPath, Charset.forName("UTF-8"));
 
 			for (String op : ops) {

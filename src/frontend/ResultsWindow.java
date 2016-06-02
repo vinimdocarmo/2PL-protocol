@@ -1,13 +1,9 @@
 package frontend;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
 import javax.swing.table.DefaultTableModel;
-
-import transacion.Operation;
-import transacion.Transaction;
 
 public class ResultsWindow extends javax.swing.JFrame {
 
@@ -65,7 +61,7 @@ public class ResultsWindow extends javax.swing.JFrame {
 				new String[] { "ID", "Operações", "Timestamp" }) {
 			private static final long serialVersionUID = -8243551619539624760L;
 
-			Class[] types = new Class[] { java.lang.String.class, java.lang.String.class, java.lang.String.class };
+			Class[] types = new Class[] { java.lang.Integer.class, java.lang.String.class, java.lang.String.class };
 			boolean[] canEdit = new boolean[] { false, false, false };
 
 			public Class getColumnClass(int columnIndex) {
@@ -80,12 +76,12 @@ public class ResultsWindow extends javax.swing.JFrame {
 		jScrollPane1.setViewportView(transactionsTable);
 
 		if (transactionsTable.getColumnModel().getColumnCount() > 0) {
-			transactionsTable.getColumnModel().getColumn(0).setPreferredWidth(10);
-			transactionsTable.getColumnModel().getColumn(1).setPreferredWidth(120);
-			transactionsTable.getColumnModel().getColumn(2).setPreferredWidth(40);
+			transactionsTable.getColumnModel().getColumn(0).setMaxWidth(40);
+			transactionsTable.getColumnModel().getColumn(1).setMaxWidth(500);
+			transactionsTable.getColumnModel().getColumn(2).setMaxWidth(140);
 		}
 
-		jLabel2.setText("Arestras do grafo de espera:");
+		jLabel2.setText("Waiting graph:");
 
 		graphTable.setModel(new javax.swing.table.DefaultTableModel(new Object[][] {
 
@@ -131,10 +127,10 @@ public class ResultsWindow extends javax.swing.JFrame {
 
 		schedulerTable.setModel(new javax.swing.table.DefaultTableModel(new Object[][] {
 
-		}, new String[] { "Transaction", "Operation" }) {
+		}, new String[] { "Transaction id", "Operation", "Time"  }) {
 			private static final long serialVersionUID = -8762742015118546328L;
-			Class[] types = new Class[] { java.lang.Integer.class, java.lang.String.class };
-			boolean[] canEdit = new boolean[] { false, false };
+			Class[] types = new Class[] { java.lang.Integer.class, java.lang.String.class, java.lang.String.class };
+			boolean[] canEdit = new boolean[] { false, false, false };
 
 			public Class getColumnClass(int columnIndex) {
 				return types[columnIndex];
@@ -144,17 +140,17 @@ public class ResultsWindow extends javax.swing.JFrame {
 				return canEdit[columnIndex];
 			}
 		});
-
+		
 		jScrollPane4.setViewportView(schedulerTable);
 
-		jLabel5.setText("TransactionRandomizer:");
+		jLabel5.setText("Transaction Randomizer:");
 
 		randomizerTable.setModel(new javax.swing.table.DefaultTableModel(new Object[][] {
 
-		}, new String[] { "Transaction" }) {
+		}, new String[] { "Transaction", "Time" }) {
 			private static final long serialVersionUID = 1773878762252139978L;
-			Class[] types = new Class[] { java.lang.Integer.class };
-			boolean[] canEdit = new boolean[] { false };
+			Class[] types = new Class[] { java.lang.Integer.class, java.lang.String.class };
+			boolean[] canEdit = new boolean[] { false, false };
 
 			public Class getColumnClass(int columnIndex) {
 				return types[columnIndex];
@@ -171,10 +167,10 @@ public class ResultsWindow extends javax.swing.JFrame {
 
 		blockTable.setModel(new javax.swing.table.DefaultTableModel(new Object[][] {
 
-		}, new String[] { "Object", "Type", "Transaction" }) {
+		}, new String[] { "Blocked item", "Lock type", "Transaction", "Time" }) {
 			private static final long serialVersionUID = 3258744779282892139L;
-			Class[] types = new Class[] { java.lang.String.class, java.lang.String.class, java.lang.Integer.class };
-			boolean[] canEdit = new boolean[] { false, false, false };
+			Class[] types = new Class[] { java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.String.class };
+			boolean[] canEdit = new boolean[] { false, false, false, false };
 
 			public Class getColumnClass(int columnIndex) {
 				return types[columnIndex];
@@ -280,21 +276,12 @@ public class ResultsWindow extends javax.swing.JFrame {
 	}// </editor-fold>//GEN-END:initComponents
 
 	private String formatTime(Date time) {
-		return (time == null ? "" : new SimpleDateFormat("HH:mm:ss").format(time));
+		return (time == null ? "" : new SimpleDateFormat("HH:mm:ss.ms").format(time));
 	}
 
-	public void updateTransactionTable(ArrayList<Transaction> transactions) {
-		removeAllLines(transactionsTable);
-
-		for (Transaction transacao : transactions) {
-			insertIntoTransactionTable(transacao.getId(), transacao.toString(), transacao.getTimestamp());
-		}
-	}
-
-	public void insertIntoTransactionTable(int transactionId, String operations, Date time) {
-		String tempoFormatado = formatTime(time);
+	public void insertIntoTransactionTable(int transactionId, String operations) {
 		DefaultTableModel model = (DefaultTableModel) transactionsTable.getModel();
-		model.addRow(new Object[] { transactionId, operations, tempoFormatado });
+		model.addRow(new Object[] { transactionId, operations, formatTime(new Date()) });
 	}
 
 	public void updateBlockTable() {
@@ -309,11 +296,10 @@ public class ResultsWindow extends javax.swing.JFrame {
 		// }
 	}
 
-	public void insertIntoBlockTable(String objectName, Operation.Type operationType, int transactionId) {
-		String formattedOperationType = operationType.toString();
+	public void insertIntoBlockTable(String objectName, String blockType, int transactionId) {
 		DefaultTableModel model = (DefaultTableModel) blockTable.getModel();
 		
-		model.addRow(new Object[] { objectName, formattedOperationType, transactionId });
+		model.addRow(new Object[] { objectName, blockType, transactionId, formatTime(new Date()) });
 	}
 
 	public void updateWaitTable() {
@@ -337,12 +323,13 @@ public class ResultsWindow extends javax.swing.JFrame {
 
 	public void insertIntoRandomizerTable(int transactionId) {
 		DefaultTableModel model = (DefaultTableModel) randomizerTable.getModel();
-		model.addRow(new Object[] { transactionId});
+		model.addRow(new Object[] { transactionId, formatTime(new Date()) });
 	}
 
-	public void insertIntoSchedulerTale(int transactionId, String operation) {
+	public void insertIntoSchedulerTable(int transactionId, String operation) {
 		DefaultTableModel model = (DefaultTableModel) schedulerTable.getModel();
-		model.addRow(new Object[] { transactionId, operation });
+		
+		model.addRow(new Object[] { transactionId, operation, formatTime(new Date()) });
 	}
 
 	public void insertIntoGraphTable(String id, String operations) {

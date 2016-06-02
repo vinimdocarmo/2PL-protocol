@@ -25,6 +25,11 @@ public class WindowThread extends Thread {
 
 			try {
 				transactions = Reader.readTransactionFiles();
+				
+				for (Transaction transaction : transactions) {
+					Controller.resultsWindow.insertIntoTransactionTable(transaction.getId(), transaction.getOperations().toString());
+				}
+				
 			} catch (IOException e) {
 				java.util.logging.Logger.getLogger(ResultsWindow.class.getName()).log(java.util.logging.Level.SEVERE,
 						null, e);
@@ -41,14 +46,15 @@ public class WindowThread extends Thread {
 			TransactionRandomizer randomizer = new TransactionRandomizer(transactions);
 
 			while (transactions.size() > 0) {
-				int interval = 0; // TODO: pegar o intervalo setado na interface
-									// ?
+				int interval = 1; // TODO: pegar o intervalo setado na interface
 
 				if (interval > 0) {
 					Thread.sleep(interval * 1000);
 				}
 
 				Transaction chosenTransaction = randomizer.getRandomTransaction();
+				
+				Controller.resultsWindow.insertIntoRandomizerTable(chosenTransaction.getId());
 
 				/**
 				 * If the transaction has no more operations, remove it
@@ -58,9 +64,14 @@ public class WindowThread extends Thread {
 					continue;
 				}
 
-				Operation nextOperation = chosenTransaction.getOperations().remove();
+				Operation nextOperation = chosenTransaction.getOperations().get(0);
 
-				scheduler.schedule(nextOperation);
+				/**
+				 * If it is possible to schedule the operation, remove it from the chosen transaction operations list
+				 */
+				if (scheduler.schedule(nextOperation)) {
+					chosenTransaction.getOperations().remove(0);
+				}
 			}
 
 			System.out.println(scheduler.toString());

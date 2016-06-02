@@ -1,19 +1,17 @@
 package transacion;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.Queue;
 
 import transacion.Operation.OperationItem;
-
-import java.sql.Timestamp;
 
 public class Transaction {
 	private final Integer id;
 	private final Timestamp timestamp;
-	private final Queue<Operation> operations;
+	private final ArrayList<Operation> operations;
 
-	public Transaction(final LinkedList<Operation> operations) {
+	public Transaction(final ArrayList<Operation> operations) {
 		this.id = TransactionUUID.generateUUID();
 		this.timestamp = new Timestamp(new Date().getTime());
 		this.operations = operations;
@@ -48,7 +46,7 @@ public class Transaction {
 		return timestamp;
 	}
 
-	public Queue<Operation> getOperations() {
+	public ArrayList<Operation> getOperations() {
 		return operations;
 	}
 
