@@ -37,7 +37,6 @@ public class LockManager {
 		private OperationItem item;
 		private LockType type;
 		private int numberOfReads = 0;
-		//TODO: ta certo isso daqui ??????
 		private LinkedList<TransactionLockTypePair> waitingTrasactions = new LinkedList<TransactionLockTypePair>();
 
 		public Lock(final Transaction transaction, final LockType lockType, final OperationItem item, final int numberOfReads) {
@@ -81,35 +80,40 @@ public class LockManager {
 		return false;
 	}
 	
-	public boolean readLock(final Transaction requestingTransaction, final OperationItem item) {
+	public void readLock(final Operation operation) {
+		Transaction requestingTransaction = operation.getTransaction();
+		OperationItem item = operation.getItem();
+
 		Lock lock = getLockByItem(item);
 		
-		/**
-		 * If the block is unlock or does not exist, create a new one
-		 */
 		if (lock == null) {
 			int numberOfReads = 1;
 			Lock newReadLock = new Lock(requestingTransaction, LockType.READ, item, numberOfReads);
 			this.locks.add(newReadLock);
 			
 			Controller.resultsWindow.insertIntoBlockTable(item.getName(), LockType.READ.toString(), requestingTransaction.getId());
+			Controller.scheduler.addOperation(operation);
 			
-			return true;
-		} else if (lock.type.equals(LockType.UNLOCKED)) {
+			return;
+		} 
+		else if (lock.type.equals(LockType.UNLOCKED)) {
 			lock.type = LockType.READ;
 			lock.blockingTransactions.add(requestingTransaction);
 			lock.numberOfReads++;
 			
 			Controller.resultsWindow.insertIntoBlockTable(item.getName(), LockType.READ.toString(), requestingTransaction.getId());
+			Controller.scheduler.addOperation(operation);
 			
-			return true;
+			return;
 		}
 		
 		/**
-		 * If the transaction already has the block for these item, do nothing
+		 * If the transaction already has a read block for these item, do nothing
 		 */
-		if (lock.blockingTransactions.contains(requestingTransaction)) {
-			return true;
+		for (Transaction transaction : lock.blockingTransactions) {
+			if (transaction.equals(requestingTransaction) && lock.type.equals(LockType.READ)) {
+				return;
+			}
 		}
 		
 		if (lock.type.equals(LockType.READ)) {
@@ -117,18 +121,20 @@ public class LockManager {
 			lock.blockingTransactions.add(requestingTransaction);
 			
 			Controller.resultsWindow.insertIntoBlockTable(item.getName(), LockType.READ.toString(), requestingTransaction.getId());
-			
-			return true;
+			Controller.scheduler.addOperation(operation);
 		} else if (lock.type.equals(LockType.WRITE)) {
-			lock.waitingTrasactions.add(new TransactionLockTypePair(requestingTransaction, LockType.READ));
+			ArrayList<Integer> ids = getBlockingTransactionsIds(lock);
 			
-			return false;
+			Controller.resultsWindow.insertIntoQueue("QUEUE", requestingTransaction.getId(), operation.toString(), ids.toString());
+			lock.waitingTrasactions.add(new TransactionLockTypePair(requestingTransaction, LockType.READ));
 		}
-		
-		return false;
 	}
 	
-	public boolean writeLock(final Transaction requestingTransaction, final OperationItem item) {
+	public void writeLock(final Operation operation) {
+		
+		final Transaction requestingTransaction = operation.getTransaction();
+		final OperationItem item = operation.getItem();
+		
 		Lock lock = getLockByItem(item);
 		
 		/**
@@ -139,34 +145,56 @@ public class LockManager {
 			this.locks.add(newWriteLock);
 			
 			Controller.resultsWindow.insertIntoBlockTable(item.getName(), LockType.WRITE.toString(), requestingTransaction.getId());
+			Controller.scheduler.addOperation(operation);
 			
-			return true;
+			return;
 		} else if (lock.type.equals(LockType.UNLOCKED)) {
 			lock.type = LockType.WRITE;
 			lock.blockingTransactions.add(requestingTransaction);
 			
 			Controller.resultsWindow.insertIntoBlockTable(item.getName(), LockType.WRITE.toString(), requestingTransaction.getId());
+			Controller.scheduler.addOperation(operation);
 			
-			return true;
+			return;
 		}
 		
 		/**
 		 * If the transaction already has the block for these item, do nothing
 		 */
-		if (lock.blockingTransactions.contains(requestingTransaction)) {
-			return true;
+		for (Transaction transaction : lock.blockingTransactions) {
+			if (transaction.equals(requestingTransaction) && lock.type.equals(LockType.WRITE)) {
+				return;
+			}
 		}
 		
 		lock.waitingTrasactions.add(new TransactionLockTypePair(requestingTransaction, LockType.WRITE));
 		
-		return false;
+		ArrayList<Integer> ids = getBlockingTransactionsIds(lock);
+		
+		Controller.resultsWindow.insertIntoQueue("QUEUE", requestingTransaction.getId(), operation.toString(), ids.toString());
 	}
 	
-	public void unlockAllByTransaction(final Transaction transaction) {
+	public void unlockAllByTransactionOperation(final Operation operation) {
+		/**
+		 * TODO:
+		 * 	rever este método. Comportamento bizarro. As vezes de 3 bloqueios ele só libera o primeiro e o ultimo.
+		 */
+		Controller.scheduler.addOperation(operation);
+		
+		Transaction transaction = operation.getTransaction();
+		
 		for (int i = 0; i < this.locks.size(); i++) {
 			Lock lock = this.locks.get(i);
-			if (lock.blockingTransactions.contains(transaction)) {
-				this.unlock(lock, transaction);
+			
+			if (lock.type.equals(LockType.UNLOCKED)) {
+				continue;
+			}
+			
+			for (Transaction blockingTransaction : lock.blockingTransactions) {
+				if (blockingTransaction.equals(transaction)) {
+					this.unlock(lock, blockingTransaction);
+					break;
+				}
 			}
 		}
 	}
@@ -175,6 +203,10 @@ public class LockManager {
 		lock.blockingTransactions.remove(blockingTrasaction);
 
 		Controller.resultsWindow.insertIntoBlockTable(lock.item.getName(), LockType.UNLOCKED.toString() + " - " + lock.type.toString(), blockingTrasaction.getId());
+		
+		if (!lock.blockingTransactions.isEmpty()) {
+			return;
+		}
 		
 		if (lock.type.equals(LockType.WRITE)) {
 			lock.type = LockType.UNLOCKED;
@@ -188,15 +220,13 @@ public class LockManager {
 			
 			Transaction nextTransaction = transactionLockTypePair.transaction;
 			
-			
-			/**
-			 * TODO: BELEZA, mas aqui eu tenho que adicionar a operação no scheduler
-			 */
-			Controller.resultsWindow.insertIntoSchedulerTable(1, "preciso adicionar no schule");
+
 			if (transactionLockTypePair.lockType.equals(LockType.READ)) {
-				readLock(nextTransaction, lock.item);
+				Controller.resultsWindow.insertIntoQueue("ENQUEUE", nextTransaction.getId(), LockType.READ.toString(), ((Integer) blockingTrasaction.getId()).toString());
+				readLock(new Operation(Operation.Type.READ, lock.item, nextTransaction));
 			} else if (transactionLockTypePair.lockType.equals(LockType.WRITE)) {
-				writeLock(nextTransaction, lock.item);
+				Controller.resultsWindow.insertIntoQueue("ENQUEUE", nextTransaction.getId(), LockType.WRITE.toString(), ((Integer) blockingTrasaction.getId()).toString());
+				writeLock(new Operation(Operation.Type.WRITE, lock.item, nextTransaction));
 			}
 		} else if (lock.type.equals(LockType.READ)) {
 			lock.numberOfReads--;
@@ -213,20 +243,20 @@ public class LockManager {
 				
 				Transaction nextTransaction = transactionLockTypePair.transaction;
 				
-				/**
-				 * TODO: BELEZA, mas aqui eu tenho que adicionar a operação no scheduler
-				 */
-				Controller.resultsWindow.insertIntoSchedulerTable(2, "preciso adicionar no schule");
+				
 				if (transactionLockTypePair.lockType.equals(LockType.READ)) {
-					readLock(nextTransaction, lock.item);
+					Controller.resultsWindow.insertIntoQueue("ENQUEUE", nextTransaction.getId(), LockType.READ.toString(), ((Integer) blockingTrasaction.getId()).toString());
+					readLock(new Operation(Operation.Type.READ, lock.item, nextTransaction));
 				} else if (transactionLockTypePair.lockType.equals(LockType.WRITE)) {
-					writeLock(nextTransaction, lock.item);
+					Controller.resultsWindow.insertIntoQueue("ENQUEUE", nextTransaction.getId(), LockType.WRITE.toString(), ((Integer) blockingTrasaction.getId()).toString());
+					writeLock(new Operation(Operation.Type.WRITE, lock.item, nextTransaction));
 				}
 			}
 		}
 	}
 
 	private Lock getLockByItem(OperationItem item) {
+
 		for (Lock lock : locks) {
 			if (lock.item.getName().equals(item.getName())) {
 				return lock;
@@ -234,5 +264,15 @@ public class LockManager {
 		}
 
 		return null;
+	}
+	
+	private ArrayList<Integer> getBlockingTransactionsIds(final Lock lock) {
+		ArrayList<Integer> ids = new ArrayList<Integer>();
+		
+		for (Transaction transaction : lock.blockingTransactions) {
+			ids.add((Integer) transaction.getId());
+		}
+		
+		return ids;
 	}
 }

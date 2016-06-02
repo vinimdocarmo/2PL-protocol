@@ -1,9 +1,13 @@
 package frontend;
 
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.swing.table.DefaultTableModel;
+
+import executer.Controller;
 
 public class ResultsWindow extends javax.swing.JFrame {
 
@@ -13,9 +17,36 @@ public class ResultsWindow extends javax.swing.JFrame {
 	 * Creates new form InterfaceResultado
 	 */
 	public ResultsWindow() {
+		KeyListener listener = new KeyListener() {
+			
+			@Override
+			public void keyTyped(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				// TODO Auto-generated method stub
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+				// TODO Auto-generated method stub
+				if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+					if (Controller.paused.get()) {
+						Controller.paused.set(false);
+					} else {
+						Controller.paused.set(true);
+					}
+				}
+			}
+		};
+		
+		addKeyListener(listener);
 		initComponents();
 	}
-
+	
 	/**
 	 * This method is called from within the constructor to initialize the form.
 	 * WARNING: Do NOT modify this code. The content of this method is always
@@ -25,7 +56,7 @@ public class ResultsWindow extends javax.swing.JFrame {
 	// <editor-fold defaultstate="collapsed" desc="Generated
 	// Code">//GEN-BEGIN:initComponents
 	private void initComponents() {
-
+		
 		jPanel1 = new javax.swing.JPanel();
 		jLabel1 = new javax.swing.JLabel();
 		jScrollPane1 = new javax.swing.JScrollPane();
@@ -45,7 +76,7 @@ public class ResultsWindow extends javax.swing.JFrame {
 		jLabel6 = new javax.swing.JLabel();
 		jScrollPane6 = new javax.swing.JScrollPane();
 		blockTable = new javax.swing.JTable();
-
+		
 		setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 		setTitle("2PL-strict protocol");
 		setMinimumSize(new java.awt.Dimension(1360, 725));
@@ -54,7 +85,7 @@ public class ResultsWindow extends javax.swing.JFrame {
 		jPanel1.setMinimumSize(new java.awt.Dimension(1327, 725));
 		jPanel1.setPreferredSize(new java.awt.Dimension(1327, 725));
 		jPanel1.setVerifyInputWhenFocusTarget(false);
-
+		
 		jLabel1.setText("Transactions:");
 
 		transactionsTable.setModel(new javax.swing.table.DefaultTableModel(new Object[][] {},
@@ -107,10 +138,10 @@ public class ResultsWindow extends javax.swing.JFrame {
 
 		queueTable.setModel(new javax.swing.table.DefaultTableModel(new Object[][] {
 
-		}, new String[] { "Transaction", "Operation", "Waiting for" }) {
+		}, new String[] { "-", "Transaction", "Operation", "Waiting for" }) {
 			private static final long serialVersionUID = 3012587335578963916L;
-			Class[] types = new Class[] { java.lang.Integer.class, java.lang.String.class, java.lang.Integer.class };
-			boolean[] canEdit = new boolean[] { false, false, false };
+			Class[] types = new Class[] { java.lang.String.class, java.lang.Integer.class, java.lang.String.class, java.lang.String.class };
+			boolean[] canEdit = new boolean[] { false, false, false, false };
 
 			public Class getColumnClass(int columnIndex) {
 				return types[columnIndex];
@@ -127,7 +158,7 @@ public class ResultsWindow extends javax.swing.JFrame {
 
 		schedulerTable.setModel(new javax.swing.table.DefaultTableModel(new Object[][] {
 
-		}, new String[] { "Transaction id", "Operation", "Time"  }) {
+		}, new String[] { "Transaction id", "Operation", "Timestamp"  }) {
 			private static final long serialVersionUID = -8762742015118546328L;
 			Class[] types = new Class[] { java.lang.Integer.class, java.lang.String.class, java.lang.String.class };
 			boolean[] canEdit = new boolean[] { false, false, false };
@@ -268,9 +299,14 @@ public class ResultsWindow extends javax.swing.JFrame {
 										.addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE,
 												javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 										.addContainerGap()));
-		layout.setVerticalGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(
-				jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
-				javax.swing.GroupLayout.PREFERRED_SIZE));
+		layout.setVerticalGroup(
+				layout
+					.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+					.addComponent(
+							jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 
+							javax.swing.GroupLayout.DEFAULT_SIZE,
+							javax.swing.GroupLayout.PREFERRED_SIZE)
+					);
 
 		pack();
 	}// </editor-fold>//GEN-END:initComponents
@@ -279,9 +315,9 @@ public class ResultsWindow extends javax.swing.JFrame {
 		return (time == null ? "" : new SimpleDateFormat("HH:mm:ss.ms").format(time));
 	}
 
-	public void insertIntoTransactionTable(int transactionId, String operations) {
+	public void insertIntoTransactionTable(int transactionId, String operations, Date timestamp) {
 		DefaultTableModel model = (DefaultTableModel) transactionsTable.getModel();
-		model.addRow(new Object[] { transactionId, operations, formatTime(new Date()) });
+		model.addRow(new Object[] { transactionId, operations, formatTime(timestamp) });
 	}
 
 	public void updateBlockTable() {
@@ -298,7 +334,6 @@ public class ResultsWindow extends javax.swing.JFrame {
 
 	public void insertIntoBlockTable(String objectName, String blockType, int transactionId) {
 		DefaultTableModel model = (DefaultTableModel) blockTable.getModel();
-		
 		model.addRow(new Object[] { objectName, blockType, transactionId, formatTime(new Date()) });
 	}
 
@@ -316,9 +351,9 @@ public class ResultsWindow extends javax.swing.JFrame {
 		// }
 	}
 
-	public void insertIntoQueue(String transacao, String operacao, int blockingTransactionId) {
+	public void insertIntoQueue(String type, int requestingTransactionId, String operacao, String blockingTransactionIds) {
 		DefaultTableModel model = (DefaultTableModel) queueTable.getModel();
-		model.addRow(new Object[] { transacao, operacao, blockingTransactionId });
+		model.addRow(new Object[] { type, requestingTransactionId, operacao, blockingTransactionIds });
 	}
 
 	public void insertIntoRandomizerTable(int transactionId) {

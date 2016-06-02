@@ -23,6 +23,12 @@ public class Operation {
 		this.setOperationItem(item);
 	}
 	
+	public Operation(final Type type,final OperationItem item, final Transaction transaction) {
+		this.type = type;
+		this.setOperationItem(item);
+		this.setTransaction(transaction);
+	}
+	
 	public Operation(Type type) {
 		this.type = type;
 	}
@@ -31,7 +37,7 @@ public class Operation {
 		return type;
 	}
 
-	public OperationItem getOperationItem() {
+	public OperationItem getItem() {
 		return item;
 	}
 

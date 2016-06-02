@@ -40,19 +40,11 @@ public class Scheduler {
 		}
 
 		if (op.getType() == Operation.Type.READ) {
-			if (lockManager.readLock(op.getTransaction(), op.getOperationItem())) {
-				getSchedule().add(op);
-				Controller.resultsWindow.insertIntoSchedulerTable(op.getTransaction().getId(), op.toString());
-			}
+			lockManager.readLock(op);
 		} else if (op.getType() == Operation.Type.WRITE) {
-			if (lockManager.writeLock(op.getTransaction(), op.getOperationItem())) {
-				getSchedule().add(op);
-				Controller.resultsWindow.insertIntoSchedulerTable(op.getTransaction().getId(), op.toString());
-			}
+			lockManager.writeLock(op);
 		} else if (op.getType() == Operation.Type.COMMIT || op.getType() == Operation.Type.ABORT) {
-			this.lockManager.unlockAllByTransaction(op.getTransaction());
-			getSchedule().add(op);
-			Controller.resultsWindow.insertIntoSchedulerTable(op.getTransaction().getId(), op.toString());
+			this.lockManager.unlockAllByTransactionOperation(op);
 		}
 		return true;
 
@@ -67,6 +59,11 @@ public class Scheduler {
 		}
 
 		return schedule;
+	}
+	
+	public void addOperation(final Operation op) {
+		getSchedule().add(op);
+		Controller.resultsWindow.insertIntoSchedulerTable(op.getTransaction().getId(), op.toString());
 	}
 
 	public ArrayList<Operation> getSchedule() {
