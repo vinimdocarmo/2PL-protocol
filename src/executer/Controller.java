@@ -9,6 +9,16 @@ import frontend.WindowThread;
 import scheduler.Scheduler;
 
 public class Controller {
+	
+	/**
+	 * TODO: 
+	 * 1) Prevenção de deadlock
+	 * 2) Detecção de deadlock
+	 * 3) Melhorar randomização:
+	 * 	3.1) Escolher um melhor algoritmo.
+	 * 	3.2) Tirar a transação que ta esperando bloqueio da lista de randomização
+	 * 4) Ver a questão dos bloquios (?)
+	 */
 
 	public static AtomicBoolean paused = new AtomicBoolean(true);
 
@@ -62,10 +72,9 @@ public class Controller {
 		resultsWindow.requestFocus();
 	}
 
-	public static void init(String path, int strategy, int interval) {
+	public static void init(String path, int strategy) {
 		Controller.path = path;
 		Controller.strategy = strategy;
-		Controller.interval = interval;
 
 		changeWindow();
 

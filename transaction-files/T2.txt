@@ -1,4 +1,4 @@
 read(u)
 read(x)
-write(z)
+write(y)
 commit

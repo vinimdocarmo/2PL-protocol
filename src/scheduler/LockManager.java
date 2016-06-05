@@ -125,7 +125,7 @@ public class LockManager {
 		} else if (lock.type.equals(LockType.WRITE)) {
 			ArrayList<Integer> ids = getBlockingTransactionsIds(lock);
 			
-			Controller.resultsWindow.insertIntoQueue("QUEUE", requestingTransaction.getId(), operation.toString(), ids.toString());
+			Controller.resultsWindow.insertIntoQueue("ADD", requestingTransaction.getId(), operation.toString(), ids.toString());
 			lock.waitingTrasactions.add(new TransactionLockTypePair(requestingTransaction, LockType.READ));
 		}
 	}
@@ -171,7 +171,7 @@ public class LockManager {
 		
 		ArrayList<Integer> ids = getBlockingTransactionsIds(lock);
 		
-		Controller.resultsWindow.insertIntoQueue("QUEUE", requestingTransaction.getId(), operation.toString(), ids.toString());
+		Controller.resultsWindow.insertIntoQueue("ADD", requestingTransaction.getId(), operation.toString(), ids.toString());
 	}
 	
 	public void unlockAllByTransactionOperation(final Operation operation) {
@@ -190,11 +190,8 @@ public class LockManager {
 				continue;
 			}
 			
-			for (Transaction blockingTransaction : lock.blockingTransactions) {
-				if (blockingTransaction.equals(transaction)) {
-					this.unlock(lock, blockingTransaction);
-					break;
-				}
+			if (lock.blockingTransactions.contains(transaction)) {
+				this.unlock(lock, transaction);
 			}
 		}
 	}
@@ -214,7 +211,6 @@ public class LockManager {
 			TransactionLockTypePair transactionLockTypePair = lock.waitingTrasactions.poll();
 			
 			if (transactionLockTypePair == null) {
-				this.locks.remove(lock);
 				return;
 			}
 			
@@ -222,10 +218,10 @@ public class LockManager {
 			
 
 			if (transactionLockTypePair.lockType.equals(LockType.READ)) {
-				Controller.resultsWindow.insertIntoQueue("ENQUEUE", nextTransaction.getId(), LockType.READ.toString(), ((Integer) blockingTrasaction.getId()).toString());
+				Controller.resultsWindow.insertIntoQueue("ADD", nextTransaction.getId(), LockType.READ.toString(), ((Integer) blockingTrasaction.getId()).toString());
 				readLock(new Operation(Operation.Type.READ, lock.item, nextTransaction));
 			} else if (transactionLockTypePair.lockType.equals(LockType.WRITE)) {
-				Controller.resultsWindow.insertIntoQueue("ENQUEUE", nextTransaction.getId(), LockType.WRITE.toString(), ((Integer) blockingTrasaction.getId()).toString());
+				Controller.resultsWindow.insertIntoQueue("POP", nextTransaction.getId(), LockType.WRITE.toString(), ((Integer) blockingTrasaction.getId()).toString());
 				writeLock(new Operation(Operation.Type.WRITE, lock.item, nextTransaction));
 			}
 		} else if (lock.type.equals(LockType.READ)) {
@@ -237,7 +233,6 @@ public class LockManager {
 				TransactionLockTypePair transactionLockTypePair = lock.waitingTrasactions.poll();
 				
 				if (transactionLockTypePair == null) {
-					this.locks.remove(lock);
 					return;
 				}
 				
@@ -245,10 +240,10 @@ public class LockManager {
 				
 				
 				if (transactionLockTypePair.lockType.equals(LockType.READ)) {
-					Controller.resultsWindow.insertIntoQueue("ENQUEUE", nextTransaction.getId(), LockType.READ.toString(), ((Integer) blockingTrasaction.getId()).toString());
+					Controller.resultsWindow.insertIntoQueue("POP", nextTransaction.getId(), LockType.READ.toString(), ((Integer) blockingTrasaction.getId()).toString());
 					readLock(new Operation(Operation.Type.READ, lock.item, nextTransaction));
 				} else if (transactionLockTypePair.lockType.equals(LockType.WRITE)) {
-					Controller.resultsWindow.insertIntoQueue("ENQUEUE", nextTransaction.getId(), LockType.WRITE.toString(), ((Integer) blockingTrasaction.getId()).toString());
+					Controller.resultsWindow.insertIntoQueue("REMOVE", nextTransaction.getId(), LockType.WRITE.toString(), ((Integer) blockingTrasaction.getId()).toString());
 					writeLock(new Operation(Operation.Type.WRITE, lock.item, nextTransaction));
 				}
 			}

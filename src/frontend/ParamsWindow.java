@@ -30,6 +30,8 @@ public class ParamsWindow extends javax.swing.JFrame {
 		strategySelect = new javax.swing.JComboBox<>();
 		jLabel3 = new javax.swing.JLabel();
 		intervalSelect = new javax.swing.JComboBox<>();
+		
+		intervalSelect.disable();
 
 		setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 		setTitle("Protocolo 2PL");
@@ -123,9 +125,8 @@ public class ParamsWindow extends javax.swing.JFrame {
 	private void btnRunSchedulerActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnImportarActionPerformed
 		String path = this.filePathField.getText();
 		int strategy = this.strategySelect.getSelectedIndex();
-		int interval = this.intervalSelect.getSelectedIndex();
 		
-		Controller.init(path, strategy, interval);
+		Controller.init(path, strategy);
 	}// GEN-LAST:event_btnImportarActionPerformed
 
 	private void txtCaminhoArquivoActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_txtCaminhoArquivoActionPerformed
