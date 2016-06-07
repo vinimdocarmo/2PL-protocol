@@ -3,10 +3,12 @@ package scheduler;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-import executer.Controller;
+import scheduler.DeadlockManager.PreventionType;
+import scheduler.DeadlockManager.StrategyType;
 import transacion.Operation;
-import transacion.Operation.OperationItem;
 import transacion.Transaction;
+import transacion.Operation.OperationItem;
+import executer.Controller;
 
 public class LockManager {
 	/**
@@ -54,9 +56,23 @@ public class LockManager {
 	}
 
 	private ArrayList<Lock> locks;
+	private DeadlockManager deadlockManager;
 
 	public LockManager() {
 		this.locks = new ArrayList<Lock>();
+		
+		/**
+		 * Initialize a deadlock manager with the strategy set on the interface
+		 */
+		if (Controller.strategy == 0) {
+			this.deadlockManager = new DeadlockManager(StrategyType.DETECTION, null);
+		} else if (Controller.strategy == 1) {
+			if (Controller.deadlockDetectionType == 0) {
+				this.deadlockManager = new DeadlockManager(StrategyType.PREVENTION, PreventionType.WOUND_WAIT);
+			} else {
+				this.deadlockManager = new DeadlockManager(StrategyType.PREVENTION, PreventionType.WAIT_DIE);
+			}
+		}
 	}
 
 	public ArrayList<Lock> getLocks() {
@@ -127,6 +143,45 @@ public class LockManager {
 			
 			Controller.resultsWindow.insertIntoQueue("ADD", requestingTransaction.getId(), operation.toString(), ids.toString());
 			lock.waitingTrasactions.add(new TransactionLockTypePair(requestingTransaction, LockType.READ));
+			
+			for (Transaction transaction : lock.blockingTransactions) {
+				addEdgeIntoGraph(requestingTransaction, transaction);
+				if (deadlockManager.graphIsCyclic()) {
+					Transaction transactionCandidate = null;
+					if (deadlockManager.strategyType == StrategyType.DETECTION) {
+						if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
+							transactionCandidate = requestingTransaction;
+						} else {
+							transactionCandidate = transaction;
+						}
+					} else if (deadlockManager.strategyType == StrategyType.PREVENTION) {
+						if (deadlockManager.preventionType == PreventionType.WOUND_WAIT) {
+							if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
+								continue;
+							} else {
+								transactionCandidate = requestingTransaction;
+							}
+						} else if (deadlockManager.preventionType == PreventionType.WAIT_DIE) {
+							if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
+								transactionCandidate = requestingTransaction;
+							} else {
+								continue;
+							}
+						}
+					}
+					
+					for (Lock currLock : locks) {
+						currLock.waitingTrasactions.remove(transactionCandidate);
+						for (TransactionLockTypePair transactionLockTypePair : currLock.waitingTrasactions) {
+							if (transactionLockTypePair.transaction == transactionCandidate) {
+								currLock.waitingTrasactions.remove(transactionLockTypePair);
+							}
+						}
+					}
+					
+					Controller.scheduler.schedule(new Operation(Operation.Type.ABORT, lock.item, transactionCandidate), true);
+				}
+			}
 		}
 	}
 	
@@ -169,6 +224,45 @@ public class LockManager {
 		
 		lock.waitingTrasactions.add(new TransactionLockTypePair(requestingTransaction, LockType.WRITE));
 		
+		for (Transaction transaction : lock.blockingTransactions) {
+			addEdgeIntoGraph(requestingTransaction, transaction);
+			if (deadlockManager.graphIsCyclic()) {
+				Transaction transactionCandidate = null;
+				if (deadlockManager.strategyType == StrategyType.DETECTION) {
+					if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
+						transactionCandidate = requestingTransaction;
+					} else {
+						transactionCandidate = transaction;
+					}
+				} else if (deadlockManager.strategyType == StrategyType.PREVENTION) {
+					if (deadlockManager.preventionType == PreventionType.WOUND_WAIT) {
+						if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
+							continue;
+						} else {
+							transactionCandidate = requestingTransaction;
+						}
+					} else if (deadlockManager.preventionType == PreventionType.WAIT_DIE) {
+						if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
+							transactionCandidate = requestingTransaction;
+						} else {
+							continue;
+						}
+					}
+				}
+				
+				for (Lock currLock : locks) {
+					currLock.waitingTrasactions.remove(transactionCandidate);
+					for (TransactionLockTypePair transactionLockTypePair : currLock.waitingTrasactions) {
+						if (transactionLockTypePair.transaction == transactionCandidate) {
+							currLock.waitingTrasactions.remove(transactionLockTypePair);
+						}
+					}
+				}
+				
+				Controller.scheduler.schedule(new Operation(Operation.Type.ABORT, lock.item, transactionCandidate), true);
+			}
+		}
+		
 		ArrayList<Integer> ids = getBlockingTransactionsIds(lock);
 		
 		Controller.resultsWindow.insertIntoQueue("ADD", requestingTransaction.getId(), operation.toString(), ids.toString());
@@ -177,7 +271,7 @@ public class LockManager {
 	public void unlockAllByTransactionOperation(final Operation operation) {
 		/**
 		 * TODO:
-		 * 	rever este método. Comportamento bizarro. As vezes de 3 bloqueios ele só libera o primeiro e o ultimo.
+		 * 	rever este m�todo. Comportamento bizarro. As vezes de 3 bloqueios ele só libera o primeiro e o ultimo.
 		 */
 		Controller.scheduler.addOperation(operation);
 		
@@ -215,6 +309,8 @@ public class LockManager {
 			}
 			
 			Transaction nextTransaction = transactionLockTypePair.transaction;
+			
+			removeEdgeFromGraph(nextTransaction, blockingTrasaction);
 			
 
 			if (transactionLockTypePair.lockType.equals(LockType.READ)) {
@@ -259,6 +355,16 @@ public class LockManager {
 		}
 
 		return null;
+	}
+	
+	private void addEdgeIntoGraph(Transaction source, Transaction target) {
+		deadlockManager.addEdgeIntoGraph(source.getId(), target.getId());
+		Controller.resultsWindow.insertIntoGraphTable("ADD", source.getId(), target.getId());
+	}
+	
+	private void removeEdgeFromGraph(Transaction source, Transaction target) {
+		deadlockManager.removeEdgeFromGraph(source.getId(), target.getId());
+		Controller.resultsWindow.insertIntoGraphTable("REMOVE", source.getId(), target.getId());
 	}
 	
 	private ArrayList<Integer> getBlockingTransactionsIds(final Lock lock) {

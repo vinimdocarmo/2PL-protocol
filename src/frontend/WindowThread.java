@@ -26,7 +26,7 @@ public class WindowThread extends Thread {
 		TransactionSet transactions = null;
 
 		try {
-			transactions = Reader.readTransactionFiles();
+			Controller.transactionSet = transactions = Reader.readTransactionFiles();
 		} catch (IOException e) {
 			java.util.logging.Logger.getLogger(ResultsWindow.class.getName()).log(java.util.logging.Level.SEVERE, null,
 					e);
@@ -52,7 +52,12 @@ public class WindowThread extends Thread {
 		while (transactions.size() > 0) {
 
 			// while (Controller.paused.get()) {
-			// Thread.sleep(500);
+			 try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			// }
 
 			Transaction chosenTransaction = randomizer.getRandomTransaction();
@@ -82,7 +87,7 @@ public class WindowThread extends Thread {
 			 * If it is possible to schedule the operation, remove it from the
 			 * chosen transaction operations list
 			 */
-			if (scheduler.schedule(nextOperation)) {
+			if (scheduler.schedule(nextOperation, false)) {
 				chosenTransaction.getOperations().remove(0);
 				Controller.paused.set(true);
 			}

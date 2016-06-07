@@ -1,38 +1,37 @@
 package scheduler;
 
-import graph.*;
+import graph.Digraph;
+import graph.DirectedCycle;
 
 public class DeadlockManager {
 
-	public enum PreventionType {WAIT_DIE, WOUND_WAIT};
+	public enum StrategyType {DETECTION, PREVENTION};
+	public enum PreventionType {WOUND_WAIT, WAIT_DIE};
 	
 	private Digraph waitingGraph;
-	private DirectedCycle directedGraph;
 	
-	/**
-	 * TODO: 
-	 * 	A gente vai precisar de uma precisar de um campo com o grafos nessa classe.
-	 *  Algo como:
-	 *  	public Graph watingGraph;
-	 */
+	public PreventionType preventionType;
+	public StrategyType strategyType;
 	
-	private PreventionType preventionType;
-	
-	public DeadlockManager(final PreventionType preventionType) {
+	public DeadlockManager(final StrategyType strategyType, final PreventionType preventionType) {
+		this.strategyType = strategyType;
 		this.preventionType = preventionType;
 		this.waitingGraph = new Digraph(10);
-		this.directedGraph = new DirectedCycle(this.waitingGraph);
 	}
 	
 	public void addEdgeIntoGraph(int source, int target) {
 		waitingGraph.addEdge(source, target);
+		System.out.println("add " + source + " -> " + target);
+		System.out.println(waitingGraph.toString()+"\n\n");
 	}
 	
-	public void removeEdgeFromGraph() {
-		//TODO
+	public void removeEdgeFromGraph(int source, int target) {
+		waitingGraph.removeEdge(source, target);
+		System.out.println("remove " + source + " -> " + target);
+		System.out.println(waitingGraph.toString()+"\n\n");
 	}
 	
 	public boolean graphIsCyclic() {
-		return directedGraph.hasCycle();
+		return new DirectedCycle(waitingGraph).hasCycle();
 	}
 }

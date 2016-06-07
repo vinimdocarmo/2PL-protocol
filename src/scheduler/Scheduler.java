@@ -2,34 +2,28 @@ package scheduler;
 
 import java.util.ArrayList;
 
-import executer.Controller;
 import transacion.Operation;
+import executer.Controller;
 
 public class Scheduler {
 
 	private ArrayList<Operation> schedule;
 	private LockManager lockManager;
-	private DeadlockManager deadlockManager;
 
 	public Scheduler() {
 		this.schedule = new ArrayList<Operation>();
 		this.lockManager = new LockManager();
-
-		/**
-		 * Initialize a deadlock manager with the strategy set on the interface
-		 */
-		DeadlockManager.PreventionType strategy = null;
-
-		if (Controller.strategy == 0) {
-			strategy = DeadlockManager.PreventionType.WAIT_DIE;
-		} else if (Controller.strategy == 1) {
-			strategy = DeadlockManager.PreventionType.WOUND_WAIT;
-		}
-
-		this.deadlockManager = new DeadlockManager(strategy);
 	}
 
-	public boolean schedule(final Operation op) {
+	public boolean schedule(final Operation op, final boolean forceAbort) {
+		
+		if (forceAbort) {
+			//TODO: quando aborta, remove transação do conjunto de transações
+			Operation newOp = new Operation(Operation.Type.ABORT, null, op.getTransaction()); 
+			this.lockManager.unlockAllByTransactionOperation(newOp);
+			Controller.transactionSet.remove(op.getTransaction());
+			return true;
+		}
 
 		/**
 		 * If the operation transaction is already on a waiting list, DO NOT do
@@ -38,7 +32,7 @@ public class Scheduler {
 		if (lockManager.isOnWaitingList(op.getTransaction())) {
 			return false;
 		}
-
+		
 		if (op.getType() == Operation.Type.READ) {
 			lockManager.readLock(op);
 		} else if (op.getType() == Operation.Type.WRITE) {
