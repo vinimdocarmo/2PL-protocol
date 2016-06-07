@@ -89,7 +89,7 @@ public class ResultsWindow extends javax.swing.JFrame {
 		jLabel1.setText("Transactions:");
 
 		transactionsTable.setModel(new javax.swing.table.DefaultTableModel(new Object[][] {},
-				new String[] { "ID", "Operações", "Timestamp" }) {
+				new String[] { "ID", "Operations", "Timestamp" }) {
 			private static final long serialVersionUID = -8243551619539624760L;
 
 			Class[] types = new Class[] { java.lang.Integer.class, java.lang.String.class, java.lang.String.class };
@@ -116,11 +116,11 @@ public class ResultsWindow extends javax.swing.JFrame {
 
 		graphTable.setModel(new javax.swing.table.DefaultTableModel(new Object[][] {
 
-		}, new String[] { "Source", "Destination" }) {
+		}, new String[] { "Operation type", "Source", "-", "Destination" }) {
 
 			private static final long serialVersionUID = 7412000343411337146L;
-			Class[] types = new Class[] { java.lang.String.class, java.lang.String.class, java.lang.String.class,
-					java.lang.String.class };
+			Class[] types = new Class[] { java.lang.String.class, java.lang.Integer.class, java.lang.String.class,
+					java.lang.Integer.class };
 			boolean[] canEdit = new boolean[] { false, false, false, false };
 
 			public Class getColumnClass(int columnIndex) {
@@ -367,9 +367,9 @@ public class ResultsWindow extends javax.swing.JFrame {
 		model.addRow(new Object[] { transactionId, operation, formatTime(new Date()) });
 	}
 
-	public void insertIntoGraphTable(String id, String operations) {
+	public void insertIntoGraphTable(final String type, final int sourceId, final int targetId) {
 		DefaultTableModel model = (DefaultTableModel) graphTable.getModel();
-		model.addRow(new Object[] { id, operations });
+		model.addRow(new Object[] { type, sourceId, "------>", targetId});
 	}
 
 	public void removeTableLines(Tables table) {

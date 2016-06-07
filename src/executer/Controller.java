@@ -7,6 +7,8 @@ import frontend.ParamsWindow;
 import frontend.ResultsWindow;
 import frontend.WindowThread;
 import scheduler.Scheduler;
+import transacion.Transaction;
+import transacion.TransactionSet;
 
 public class Controller {
 	
@@ -26,10 +28,14 @@ public class Controller {
 	public static ResultsWindow resultsWindow = null;
 
 	public static Scheduler scheduler = null;
+	
+	public static TransactionSet transactionSet;
 
 	public static String path = null;
 	public static int strategy = -1;
 	public static int interval = -1;
+
+	public static int deadlockDetectionType;
 
 	public static void main(String[] args) throws IOException {
 		try {
@@ -72,9 +78,10 @@ public class Controller {
 		resultsWindow.requestFocus();
 	}
 
-	public static void init(String path, int strategy) {
+	public static void init(String path, int strategy, int deadlockDetectionType) {
 		Controller.path = path;
 		Controller.strategy = strategy;
+		Controller.deadlockDetectionType = deadlockDetectionType;
 
 		changeWindow();
 

@@ -28,6 +28,7 @@
  ******************************************************************************/
 package graph;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -60,6 +61,10 @@ public class Bag<Item> implements Iterable<Item> {
     private static class Node<Item> {
         private Item item;
         private Node<Item> next;
+        
+        public Item getItem() {
+        	return item;
+        }
     }
 
     /**
@@ -130,6 +135,39 @@ public class Bag<Item> implements Iterable<Item> {
             return item;
         }
     }
+
+	public void remove(Item w) {
+		// TODO Auto-generated method stub
+		Node<Item> curr = first;
+		
+		System.out.println(this.toString());
+		
+		ArrayList<Node<Item>> cloneWithoutW = new ArrayList<Node<Item>>();
+		
+		while (curr != null) {
+			Node<Item> aux = curr.next;
+			
+			if (curr.getItem() == w) { 
+				if (aux != null) {
+					curr.next = aux.next;
+				} else {
+					curr.next = null;
+				}
+			} else {
+				cloneWithoutW.add(curr);
+			}
+			
+			curr = aux;
+		}
+		
+		first = null;
+		N = 0;
+		
+		for (Node<Item> node : cloneWithoutW) {
+			add(node.getItem());
+		}
+		
+	}
 
 
 }

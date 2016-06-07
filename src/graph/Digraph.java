@@ -54,7 +54,6 @@ public class Digraph {
     private final int V;           // number of vertices in this digraph
     private int E;                 // number of edges in this digraph
     private Bag<Integer>[] adj;    // adj[v] = adjacency list for vertex v
-    private int[] indegree;        // indegree[v] = indegree of vertex v
     
     /**
      * Initializes an empty digraph with <em>V</em> vertices.
@@ -66,7 +65,6 @@ public class Digraph {
         if (V < 0) throw new IllegalArgumentException("Number of vertices in a Digraph must be nonnegative");
         this.V = V;
         this.E = 0;
-        indegree = new int[V];
         adj = (Bag<Integer>[]) new Bag[V];
         for (int v = 0; v < V; v++) {
             adj[v] = new Bag<Integer>();
@@ -110,8 +108,19 @@ public class Digraph {
 			validateVertex(v);
 			validateVertex(w);
         	adj[v].add(w);
-        	indegree[w]++;
         	E++;
+        } catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    public void removeEdge (int v, int w) {
+    	try {
+			validateVertex(v);
+			validateVertex(w);
+        	adj[v].remove(w);
+        	E--;
         } catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
