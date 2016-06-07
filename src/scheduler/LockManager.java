@@ -150,22 +150,22 @@ public class LockManager {
 					Transaction transactionCandidate = null;
 					if (deadlockManager.strategyType == StrategyType.DETECTION) {
 						if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
-							transactionCandidate = requestingTransaction;
-						} else {
 							transactionCandidate = transaction;
+						} else {
+							transactionCandidate = requestingTransaction;
 						}
 					} else if (deadlockManager.strategyType == StrategyType.PREVENTION) {
 						if (deadlockManager.preventionType == PreventionType.WOUND_WAIT) {
 							if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
-								continue;
+								transactionCandidate = transaction;
 							} else {
-								transactionCandidate = requestingTransaction;
+								continue;
 							}
 						} else if (deadlockManager.preventionType == PreventionType.WAIT_DIE) {
 							if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
-								transactionCandidate = requestingTransaction;
-							} else {
 								continue;
+							} else {
+								transactionCandidate = requestingTransaction;
 							}
 						}
 					}
@@ -230,22 +230,22 @@ public class LockManager {
 				Transaction transactionCandidate = null;
 				if (deadlockManager.strategyType == StrategyType.DETECTION) {
 					if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
-						transactionCandidate = requestingTransaction;
-					} else {
 						transactionCandidate = transaction;
+					} else {
+						transactionCandidate = requestingTransaction;
 					}
 				} else if (deadlockManager.strategyType == StrategyType.PREVENTION) {
 					if (deadlockManager.preventionType == PreventionType.WOUND_WAIT) {
 						if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
-							continue;
+							transactionCandidate = transaction;
 						} else {
-							transactionCandidate = requestingTransaction;
+							continue;
 						}
 					} else if (deadlockManager.preventionType == PreventionType.WAIT_DIE) {
 						if (requestingTransaction.getTimestamp().before(transaction.getTimestamp())) {
-							transactionCandidate = requestingTransaction;
-						} else {
 							continue;
+						} else {
+							transactionCandidate = requestingTransaction;
 						}
 					}
 				}
@@ -333,7 +333,8 @@ public class LockManager {
 				}
 				
 				Transaction nextTransaction = transactionLockTypePair.transaction;
-				
+			
+				removeEdgeFromGraph(nextTransaction, blockingTrasaction);
 				
 				if (transactionLockTypePair.lockType.equals(LockType.READ)) {
 					Controller.resultsWindow.insertIntoQueue("POP", nextTransaction.getId(), LockType.READ.toString(), ((Integer) blockingTrasaction.getId()).toString());

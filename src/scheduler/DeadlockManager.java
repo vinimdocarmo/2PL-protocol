@@ -21,14 +21,10 @@ public class DeadlockManager {
 	
 	public void addEdgeIntoGraph(int source, int target) {
 		waitingGraph.addEdge(source, target);
-		System.out.println("add " + source + " -> " + target);
-		System.out.println(waitingGraph.toString()+"\n\n");
 	}
 	
 	public void removeEdgeFromGraph(int source, int target) {
 		waitingGraph.removeEdge(source, target);
-		System.out.println("remove " + source + " -> " + target);
-		System.out.println(waitingGraph.toString()+"\n\n");
 	}
 	
 	public boolean graphIsCyclic() {
